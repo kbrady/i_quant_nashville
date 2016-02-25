@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+		<style>
+				html, body {
+					height: 100%;
+					margin: 0;
+					padding: 0;
+				}
+				#map {
+					height: 500px;
+					margin-right: 400px;
+				}
+				#floating-Panel {
+					position: absolute;
+					top: 10px;
+					left: 25%;
+					z-index: 5;
+					background-color: #fff;
+					padding: 5px;
+					border: 1px solid #999;
+					text-align: center;
+					font-family: 'Roboto','sans-serif';
+					line-height: 30px;
+					padding-left: 10px;
+					background: #fff;
+					padding: 5px;
+					font-size: 14px;
+					font-family: Arial;
+					border: 1px solid #ccc;
+					box-shadow: 0 2px 2px rgba(33, 33, 33, 0.4);
+				}
+				#directions-Panel {
+					font-family: 'Roboto','sans-serif';
+					line-height: 30px;
+					padding-left: 10px;
+					height: 500px;
+					float: right;
+					width: 390px;
+					overflow: auto;
+				}
+				#directions-Panel select, #directions-Panel input {
+					font-size: 15px;
+				}
+
+				#directions-Panel select {
+					width: 100%;
+				}
+
+				#directions-Panel i {
+					font-size: 12px;
+				}
+				#other-places-Panel {
+					overflow: auto;
+				}
+			</style>
+	
+	<div id="floating-Panel">
+	<input id="start"></input>
+	<button onclick="onChangeHandler()">Find Closest</button>
+    </div>
+	<div id="directions-Panel"> </div>
+	<div id="map"> </div>
+	<div id="other-places-Panel">
+	</div>
+	
+	<script type="text/Javascript">
+			function geocodeAddress(address, name, geocoder, resultsMap, markersArray) {
+					geocoder.geocode({'address': address}, function(results, status) {
+							if (status === google.maps.GeocoderStatus.OK) {
+									var location = results[0].geometry.location;
+									if (address.substr(0,3) == '700') resultsMap.setCenter(location);
+									var marker = new google.maps.Marker({
+											map: resultsMap,
+											title: name,
+											position: location
+									});
+									var infowindow = new google.maps.InfoWindow({
+										content: name + '<br/>' + address
+									});
+									infoWindows.push(infowindow);
+									marker.addListener('click', function() {
+										deleteInfoWindows();
+										infowindow.open(resultsMap, marker);
+									});
+									markersArray.push(marker);
+							} else {
+									alert('Geocode was not successful for the following reason: ' + status);
+							}
+					});
+			}
+			
+			function deleteInfoWindows() {
+				for (var i=0; i < infoWindows.length; i++) {
+					infoWindows[i].close();
+				}
+			}
+			
+			function putAddress(lat_long_pair, name, resultsMap) {
+					return new google.maps.Marker({
+							map: resultsMap,
+							title: name,
+							position: {lat: lat_long_pair[0], lng: lat_long_pair[1]}
+					});
+			}
+			
+			function calculateAndDisplayRoute(start, end) {
+				directionsService.route({
+					origin: start,
+					destination: end,
+					travelMode: google.maps.TravelMode.DRIVING
+				}, function(response, status) {
+					if (status === google.maps.DirectionsStatus.OK) {
+						directionsDisplay.setDirections(response);
+					} else {
+						window.alert('Directions request failed due to ' + status);
+					}
+				});
+			}
+			
+			var map;
+			var markers = Array();
+			var infoWindows = Array();
+			var service;
+			var directionsDisplay;
+			var directionsService;
+			
+			function initMap() {
+					map = new google.maps.Map(document.getElementById('map'), {
+									zoom: 10
+							});
+					var geocoder = new google.maps.Geocoder();
+					service = new google.maps.DistanceMatrixService;
+					directionsService = new google.maps.DirectionsService;
+					directionsDisplay = new google.maps.DirectionsRenderer;
+					directionsDisplay.setMap(map);
+					directionsDisplay.setPanel(document.getElementById('directions-Panel'));
+	
+					geocodeAddress('4705 Harding Pike, Nashville, TN 37205', 'Belle Meade City Hall', geocoder, map, markers);
+			
+					geocodeAddress('656 Coice Jeannie Road, Nashville, TN 37221', 'Bellevue Community Center', geocoder, map, markers);
+			
+					geocodeAddress('4000 Clarksville Pike, Nashville, TN 37218', 'Bordeaux Library', geocoder, map, markers);
+			
+					geocodeAddress('2195 Nolensville Pike, Nashville, TN 37211', 'Casa Azafran Community Center', geocoder, map, markers);
+			
+					geocodeAddress('200 Memorial Dr, Goodlettsville, TN 37072', 'Goodlettsville Community Center', geocoder, map, markers);
+			
+					geocodeAddress('3701 BENHAM AVE, NASHVILLE, TN 37215', 'Green Hills Library', geocoder, map, markers);
+			
+					geocodeAddress('3700 JAMES KAY LANE, HERMITAGE, TN 37076', 'Hermitage Library', geocoder, map, markers);
+			
+					geocodeAddress('610 GALLATIN PIKE S, MADISON, TN 37115', 'Madison Library', geocoder, map, markers);
+			
+					geocodeAddress('5724 EDMONDSON PIKE, NASHVILLE, TN 37211', 'Oglesby Community Club', geocoder, map, markers);
+			
+					geocodeAddress('700 2ND AVE S, NASHVILLE, TN 37210', 'Sonny West Auditorium', geocoder, map, markers);
+			
+					geocodeAddress('5260 HICKORY HOLLOW PKWY, STE 202, ANTIOCH, TN 37013', 'Southeast Community Center', geocoder, map, markers);
+			}
+			
+	function onChangeHandler() {
+		var locations = [];
+		for (var i = 0; i < markers.length; i++) {
+			locations.push({lat: markers[i].position.lat(), lng: markers[i].position.lng(), title: markers[i].title});
+		}
+		service.getDistanceMatrix({
+			origins: [document.getElementById('start').value],
+			destinations: locations,
+			travelMode: google.maps.TravelMode.DRIVING,
+			unitSystem: google.maps.UnitSystem.IMPERIAL,
+			avoidHighways: false,
+			avoidTolls: false
+		}, function(response, status) {
+			if (status !== google.maps.DistanceMatrixStatus.OK) {
+				alert('error was: ' + status);
+			} else {
+				var origin = response.originAddresses[0];
+				var destinationlist = locations;
+				var outputdiv = document.getElementById('other-places-Panel');
+				outputdiv.innerHTML = '';
+				
+				var distances = response.rows[0].elements;
+				var results = Array();
+				for (var j = 0; j < distances.length; j++) {
+					results.push({'loc':destinationlist[j], 'dist': distances[j]});
+				}
+				results.sort(function(a,b) {
+					if (a.dist.duration.text == b.dist.duration.text) {
+						if (a.dist.distance.value > b.dist.distance.value) return 1;
+						if (a.dist.distance.value < b.dist.distance.value) return -1;
+					}
+					if (a.dist.duration.value > b.dist.duration.value) return 1;
+					if (a.dist.duration.value < b.dist.duration.value) return -1;
+					return 0
+				});
+				for (var j = 0; j < results.length; j++) {
+					outputdiv.innerHTML += results[j].dist.distance.text + ' in ' +
+							results[j].dist.duration.text + ' to ' + results[j].loc.title + '<br>';
+				}
+				
+				calculateAndDisplayRoute(origin, results[0].loc);
+			}
+		});
+	}
+
+	</script>
+	
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDSVmwM_JIMJx3WebgRC6JmEHkt6FvIKCg&callback=initMap">
+    </script>
+  </body>
+</html>
